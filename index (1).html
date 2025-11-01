@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RWA Token - 実世界の資産をデジタルで所有する</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+        
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        .animate-float {
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        .animate-gradient {
+            background-size: 200% 200%;
+            animation: gradient 8s ease infinite;
+        }
+        
+        .glass-effect {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .glow-effect {
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.3);
+        }
+        
+        .card-hover {
+            transition: all 0.3s ease;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 40px rgba(59, 130, 246, 0.2);
+        }
+        
+        html {
+            scroll-behavior: smooth;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        function Icon({ name, className = "w-6 h-6" }) {
+            const icons = {
+                building: (
+                    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                ),
+                trending: (
+                    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                ),
+                shield: (
+                    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                    </svg>
+                ),
+                globe: (
+                    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                ),
+                chart: (
+                    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                ),
+                lock: (
+                    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                ),
+                users: (
+                    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                ),
+                chevronRight: (
+                    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                ),
+                menu: (
+                    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
+                ),
+                close: (
+                    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                ),
+                check: (
+                    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                    </svg>
+                ),
+                sparkles: (
+                    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                    </svg>
+                )
+            };
+            return icons[name] || null;
+        }
+
+        function RWATokenSite() {
+            const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+            const [activeAsset, setActiveAsset] = useState(0);
+
+            const assets = [
+                {
+                    id: 'real-estate',
+                    name: '不動産',
+                    icon: 'building',
+                    description: '商業用不動産や住宅物件を小口化して投資可能に',
+                    min: '¥10,000',
+                    apy: '5-8%',
+                    color: 'from-blue-500 to-cyan-500'
+                },
+                {
+                    id: 'commodities',
+                    name: 'コモディティ',
+                    icon: 'chart',
+                    description: '金、銀、原油などの現物資産への投資',
+                    min: '¥5,000',
+                    apy: '3-6%',
+                    color: 'from-amber-500 to-orange-500'
+                },
+                {
+                    id: 'bonds',
+                    name: '債券',
+                    icon: 'trending',
+                    description: '企業債や国債をトークン化して取引',
+                    min: '¥50,000',
+                    apy: '4-7%',
+                    color: 'from-purple-500 to-pink-500'
+                }
+            ];
+
+            const features = [
+                {
+                    icon: 'shield',
+                    title: '完全な透明性',
+                    description: 'ブロックチェーン上で全ての取引を記録。資産の所有権が明確です。',
+                    gradient: 'from-blue-500 to-cyan-500'
+                },
+                {
+                    icon: 'lock',
+                    title: '高いセキュリティ',
+                    description: 'スマートコントラクトによる自動執行で、第三者リスクを最小化。',
+                    gradient: 'from-purple-500 to-pink-500'
+                },
+                {
+                    icon: 'globe',
+                    title: 'グローバルアクセス',
+                    description: '24時間365日、世界中どこからでも資産にアクセス可能。',
+                    gradient: 'from-green-500 to-emerald-500'
+                },
+                {
+                    icon: 'users',
+                    title: '小口投資可能',
+                    description: '高額な実物資産を小口化し、誰でも投資できる仕組み。',
+                    gradient: 'from-orange-500 to-amber-500'
+                }
+            ];
+
+            const stats = [
+                { value: '¥120億+', label: 'トークン化資産総額' },
+                { value: '15,000+', label: 'アクティブ投資家' },
+                { value: '250+', label: 'トークン化物件' },
+                { value: '98.5%', label: '顧客満足度' }
+            ];
+
+            const steps = [
+                {
+                    step: '01',
+                    title: 'アカウント作成',
+                    description: 'メールアドレスとウォレットを接続して、数分でアカウントを作成。',
+                    icon: 'users'
+                },
+                {
+                    step: '02',
+                    title: '資産を選択',
+                    description: '豊富な資産リストから、投資したい物件やコモディティを選択。',
+                    icon: 'chart'
+                },
+                {
+                    step: '03',
+                    title: 'トークン購入',
+                    description: '希望の金額でトークンを購入し、即座に資産の所有権を獲得。',
+                    icon: 'check'
+                }
+            ];
+
+            useEffect(() => {
+                const interval = setInterval(() => {
+                    setActiveAsset((prev) => (prev + 1) % assets.length);
+                }, 4000);
+                return () => clearInterval(interval);
+            }, []);
+
+            return (
+                <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 text-white overflow-x-hidden">
+                    {/* Animated Background */}
+                    <div className="fixed inset-0 overflow-hidden pointer-events-none">
+                        <div className="absolute top-0 -left-4 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-float"></div>
+                        <div className="absolute top-0 -right-4 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-float" style={{ animationDelay: '2s' }}></div>
+                        <div className="absolute -bottom-8 left-20 w-96 h-96 bg-cyan-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-float" style={{ animationDelay: '4s' }}></div>
+                    </div>
+
+                    {/* Header */}
+                    <header className="relative z-50 container mx-auto px-6 py-6">
+                        <nav className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3">
+                                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center glow-effect">
+                                    <Icon name="building" className="w-7 h-7" />
+                                </div>
+                                <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                                    RWA Token
+                                </span>
+                            </div>
+                            
+                            <div className="hidden md:flex items-center space-x-8">
+                                <a href="#assets" className="text-slate-300 hover:text-white transition font-medium">資産</a>
+                                <a href="#features" className="text-slate-300 hover:text-white transition font-medium">特徴</a>
+                                <a href="#how" className="text-slate-300 hover:text-white transition font-medium">仕組み</a>
+                                <a href="#stats" className="text-slate-300 hover:text-white transition font-medium">実績</a>
+                                <button className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 px-6 py-2.5 rounded-lg transition font-semibold">
+                                    始める
+                                </button>
+                            </div>
+
+                            <button 
+                                className="md:hidden p-2"
+                                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                            >
+                                <Icon name={mobileMenuOpen ? "close" : "menu"} className="w-6 h-6" />
+                            </button>
+                        </nav>
+
+                        {/* Mobile Menu */}
+                        {mobileMenuOpen && (
+                            <div className="md:hidden mt-4 glass-effect rounded-2xl p-6 space-y-4">
+                                <a href="#assets" className="block text-slate-300 hover:text-white transition font-medium">資産</a>
+                                <a href="#features" className="block text-slate-300 hover:text-white transition font-medium">特徴</a>
+                                <a href="#how" className="block text-slate-300 hover:text-white transition font-medium">仕組み</a>
+                                <a href="#stats" className="block text-slate-300 hover:text-white transition font-medium">実績</a>
+                                <button className="w-full bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 px-6 py-2.5 rounded-lg transition font-semibold">
+                                    始める
+                                </button>
+                            </div>
+                        )}
+                    </header>
+
+                    {/* Hero Section */}
+                    <section className="relative container mx-auto px-6 py-20 md:py-32">
+                        <div className="max-w-5xl mx-auto text-center">
+                            <div className="inline-flex items-center space-x-2 glass-effect px-4 py-2 rounded-full mb-6">
+                                <Icon name="sparkles" className="w-4 h-4 text-blue-400" />
+                                <span className="text-sm text-blue-300 font-medium">次世代の資産運用プラットフォーム</span>
+                            </div>
+                            
+                            <h1 className="text-5xl md:text-7xl font-black mb-6 leading-tight">
+                                <span className="bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent animate-gradient">
+                                    実世界の資産を、
+                                </span>
+                                <br />
+                                <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-blue-400 bg-clip-text text-transparent animate-gradient">
+                                    デジタルで所有する
+                                </span>
+                            </h1>
+                            
+                            <p className="text-xl md:text-2xl text-slate-300 mb-12 max-w-3xl mx-auto leading-relaxed">
+                                不動産、債券、コモディティなどの実物資産をブロックチェーン上でトークン化。
+                                小口から始められる、新しい投資のカタチ。
+                            </p>
+                            
+                            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-16">
+                                <button className="group bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 px-10 py-5 rounded-xl text-lg font-bold transition flex items-center justify-center glow-effect">
+                                    投資を始める
+                                    <Icon name="chevronRight" className="w-5 h-5 ml-2 group-hover:translate-x-1 transition" />
+                                </button>
+                                <button className="glass-effect hover:bg-white/10 px-10 py-5 rounded-xl text-lg font-bold transition">
+                                    詳しく見る
+                                </button>
+                            </div>
+
+                            {/* Floating Asset Cards Preview */}
+                            <div className="relative h-64 md:h-80">
+                                {assets.map((asset, index) => (
+                                    <div
+                                        key={asset.id}
+                                        className={`absolute left-1/2 transform -translate-x-1/2 transition-all duration-700 ${
+                                            index === activeAsset 
+                                                ? 'opacity-100 scale-100 z-10' 
+                                                : 'opacity-0 scale-90 z-0'
+                                        }`}
+                                    >
+                                        <div className="glass-effect rounded-2xl p-8 w-80 card-hover">
+                                            <div className={`w-16 h-16 bg-gradient-to-br ${asset.color} rounded-xl flex items-center justify-center mb-4 mx-auto`}>
+                                                <Icon name={asset.icon} className="w-8 h-8" />
+                                            </div>
+                                            <h3 className="text-2xl font-bold mb-2">{asset.name}</h3>
+                                            <p className="text-slate-400 mb-4">{asset.description}</p>
+                                            <div className="flex justify-around text-sm">
+                                                <div>
+                                                    <div className="text-slate-500 mb-1">最小投資額</div>
+                                                    <div className="font-bold text-blue-400 text-lg">{asset.min}</div>
+                                                </div>
+                                                <div>
+                                                    <div className="text-slate-500 mb-1">想定利回り</div>
+                                                    <div className="font-bold text-green-400 text-lg">{asset.apy}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Stats Section */}
+                    <section id="stats" className="relative container mx-auto px-6 py-16">
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 max-w-6xl mx-auto">
+                            {stats.map((stat, index) => (
+                                <div key={index} className="text-center glass-effect rounded-2xl p-8 card-hover">
+                                    <div className="text-4xl md:text-5xl font-black bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-3">
+                                        {stat.value}
+                                    </div>
+                                    <div className="text-slate-400 font-medium">{stat.label}</div>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+
+                    {/* Assets Section */}
+                    <section id="assets" className="relative container mx-auto px-6 py-20 md:py-32">
+                        <div className="text-center mb-16">
+                            <h2 className="text-4xl md:text-5xl font-black mb-4">
+                                <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                                    トークン化できる資産
+                                </span>
+                            </h2>
+                            <p className="text-slate-400 text-lg max-w-2xl mx-auto">
+                                様々な実物資産をデジタル化し、誰でも投資できる形で提供します
+                            </p>
+                        </div>
+                        
+                        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+                            {assets.map((asset, index) => (
+                                <div
+                                    key={asset.id}
+                                    className="glass-effect rounded-2xl p-8 card-hover cursor-pointer group"
+                                >
+                                    <div className={`w-16 h-16 bg-gradient-to-br ${asset.color} rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition`}>
+                                        <Icon name={asset.icon} className="w-8 h-8" />
+                                    </div>
+                                    <h3 className="text-2xl font-bold mb-3">{asset.name}</h3>
+                                    <p className="text-slate-400 mb-6 leading-relaxed">{asset.description}</p>
+                                    <div className="flex justify-between pt-6 border-t border-slate-700/50">
+                                        <div>
+                                            <div className="text-slate-500 text-sm mb-1">最小投資額</div>
+                                            <div className="font-bold text-blue-400 text-lg">{asset.min}</div>
+                                        </div>
+                                        <div>
+                                            <div className="text-slate-500 text-sm mb-1">想定利回り</div>
+                                            <div className="font-bold text-green-400 text-lg">{asset.apy}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+
+                    {/* Features Section */}
+                    <section id="features" className="relative container mx-auto px-6 py-20 md:py-32">
+                        <div className="text-center mb-16">
+                            <h2 className="text-4xl md:text-5xl font-black mb-4">
+                                <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                                    RWA Tokenの特徴
+                                </span>
+                            </h2>
+                            <p className="text-slate-400 text-lg max-w-2xl mx-auto">
+                                ブロックチェーン技術により、従来の投資の課題を解決します
+                            </p>
+                        </div>
+                        
+                        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-7xl mx-auto">
+                            {features.map((feature, index) => (
+                                <div key={index} className="glass-effect rounded-2xl p-8 card-hover text-center">
+                                    <div className={`w-20 h-20 bg-gradient-to-br ${feature.gradient} rounded-2xl flex items-center justify-center mx-auto mb-6 glow-effect`}>
+                                        <Icon name={feature.icon} className="w-10 h-10" />
+                                    </div>
+                                    <h3 className="text-xl font-bold mb-3">{feature.title}</h3>
+                                    <p className="text-slate-400 leading-relaxed">{feature.description}</p>
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+
+                    {/* How It Works */}
+                    <section id="how" className="relative container mx-auto px-6 py-20 md:py-32">
+                        <div className="text-center mb-16">
+                            <h2 className="text-4xl md:text-5xl font-black mb-4">
+                                <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+                                    投資の流れ
+                                </span>
+                            </h2>
+                            <p className="text-slate-400 text-lg max-w-2xl mx-auto">
+                                シンプルな3ステップで、実物資産への投資を開始できます
+                            </p>
+                        </div>
+                        
+                        <div className="grid md:grid-cols-3 gap-12 max-w-6xl mx-auto">
+                            {steps.map((item, index) => (
+                                <div key={index} className="relative">
+                                    <div className="glass-effect rounded-2xl p-8 card-hover">
+                                        <div className="text-7xl font-black text-blue-500/20 mb-4">
+                                            {item.step}
+                                        </div>
+                                        <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center mb-4">
+                                            <Icon name={item.icon} className="w-8 h-8" />
+                                        </div>
+                                        <h3 className="text-2xl font-bold mb-4">{item.title}</h3>
+                                        <p className="text-slate-400 leading-relaxed">{item.description}</p>
+                                    </div>
+                                    {index < 2 && (
+                                        <div className="hidden lg:block absolute top-1/2 left-full w-12 -translate-y-1/2">
+                                            <Icon name="chevronRight" className="w-8 h-8 text-blue-500/30" />
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    </section>
+
+                    {/* CTA Section */}
+                    <section className="relative container mx-auto px-6 py-20">
+                        <div className="bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded-3xl p-12 md:p-16 text-center relative overflow-hidden animate-gradient">
+                            <div className="absolute inset-0 bg-black/20"></div>
+                            <div className="relative z-10">
+                                <h2 className="text-4xl md:text-5xl font-black mb-6">
+                                    今すぐ投資を始めましょう
+                                </h2>
+                                <p className="text-xl text-blue-100 mb-10 max-w-3xl mx-auto leading-relaxed">
+                                    従来は高額で手が届かなかった実物資産も、RWA Tokenなら小口から投資可能。
+                                    新しい資産運用の世界へ、今すぐアクセス。
+                                </p>
+                                <button className="bg-white text-blue-600 hover:bg-slate-100 px-10 py-5 rounded-xl text-lg font-bold transition glow-effect">
+                                    無料で始める
+                                </button>
+                            </div>
+                        </div>
+                    </section>
+
+                    {/* Footer */}
+                    <footer className="relative container mx-auto px-6 py-16 border-t border-slate-800">
+                        <div className="grid md:grid-cols-4 gap-12 mb-12">
+                            <div>
+                                <div className="flex items-center space-x-3 mb-4">
+                                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center">
+                                        <Icon name="building" className="w-6 h-6" />
+                                    </div>
+                                    <span className="text-xl font-bold">RWA Token</span>
+                                </div>
+                                <p className="text-slate-400 leading-relaxed">
+                                    実世界の資産をブロックチェーンで民主化する
+                                </p>
+                            </div>
+                            <div>
+                                <h4 className="font-bold mb-4 text-lg">プロダクト</h4>
+                                <ul className="space-y-3 text-slate-400">
+                                    <li><a href="#" className="hover:text-white transition">資産一覧</a></li>
+                                    <li><a href="#" className="hover:text-white transition">マーケットプレイス</a></li>
+                                    <li><a href="#" className="hover:text-white transition">ポートフォリオ</a></li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 className="font-bold mb-4 text-lg">リソース</h4>
+                                <ul className="space-y-3 text-slate-400">
+                                    <li><a href="#" className="hover:text-white transition">ドキュメント</a></li>
+                                    <li><a href="#" className="hover:text-white transition">ホワイトペーパー</a></li>
+                                    <li><a href="#" className="hover:text-white transition">ヘルプセンター</a></li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 className="font-bold mb-4 text-lg">会社情報</h4>
+                                <ul className="space-y-3 text-slate-400">
+                                    <li><a href="#" className="hover:text-white transition">私たちについて</a></li>
+                                    <li><a href="#" className="hover:text-white transition">採用情報</a></li>
+                                    <li><a href="#" className="hover:text-white transition">お問い合わせ</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div className="text-center text-slate-500 pt-8 border-t border-slate-800">
+                            <p>© 2025 RWA Token. All rights reserved.</p>
+                        </div>
+                    </footer>
+                </div>
+            );
+        }
+
+        ReactDOM.render(<RWATokenSite />, document.getElementById('root'));
+    </script>
+</body>
+</html>
